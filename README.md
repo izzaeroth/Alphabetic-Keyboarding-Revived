@@ -4,14 +4,31 @@ A Windows 11 typing tutor with a retro-inspired interface and **independently wr
 
 ## Features
 
-- 18 lessons with 90 exercises covering home-row typing, additional keys, numbers, punctuation, and fluency.
+- 18 lessons with 90 exercises covering home-row typing, the space bar, additional keys, numbers, punctuation, and fluency.
 - On-screen keyboard with next-key highlighting and finger guides.
-- Practice and Timed Test modes. For lesson lines, timing begins with the first typed character and stops when you press **Enter**; it stays paused between lines.
+- Guided typing practice with keyboard and finger hints. For lesson lines, timing begins with the first typed character and stops when you press **Enter**; it stays paused between lines.
 - Keyboard Sprint, sentence-based speed tests, speed goals, and **Games** (Falling Letters, Four-Letter Challenge, Falling Words).
 - Student profiles, WPM and accuracy reports, CSV export, and record backup/restore.
 - 20-target game rounds with four speed levels, points, per-student high scores, and game results in Progress and Settings.
 - **Progress and Settings** for viewing results, clearing selected students' reports or all reports, and resetting the application.
 - Clickable **Help & About** topics.
+
+## Learning sequence
+
+The first six lessons introduce touch typing one step at a time:
+
+| Lesson | Focus |
+|---|---|
+| 1 | Left-hand home row (`asdf` and `fdsa`) without spaces |
+| 2 | Right-hand home row (`jkl;` and `;lkj`) without spaces |
+| 3 | Both hands together, without spaces |
+| 4 | Space-bar technique and the first spaced drills |
+| 5 | Short words using home-row keys |
+| 6 | Home-row fluency with short phrases |
+
+Lessons 7–18 continue through upper and lower rows, capitalization, numbers,
+punctuation, accuracy, and fluency. Exercises 1–3 deliberately avoid spaces;
+the space bar is first introduced in Lesson 4.
 
 ## Games
 
@@ -102,7 +119,7 @@ If `py` isn't available, substitute `python` if it points to a compatible Python
 
 The build embeds `app_icon.ico` (a home-row close-up from `AKR.png`) as the EXE icon and includes the same icon for the application window. The EXE is self-contained; no separate icon or splash file is needed alongside it. On startup the application shows `AKR.png` artwork as a 2.5-second splash screen (using a bundled, display-sized `splash.png`).
 
-The executable's **Product version** and **File version** are set to **1.2.0.0** in `version_info.txt` (visible in Windows File Properties after building).
+The executable's **Product version** and **File version** are set to **1.3.0.0** in `version_info.txt` (visible in Windows File Properties after building).
 
 ## For developers: run the source without building
 
@@ -123,7 +140,7 @@ If you want to test or modify the Python code, install Python 3.10+ with Tkinter
 | `kids_games.py` | Games window, falling targets, scoring, and high-score helpers |
 | `START_WINDOWS.bat` | Runs the Python source; **requires Python** |
 | `BUILD_WINDOWS_EXE.bat` | Tests and builds the standalone Windows EXE; **requires Python** |
-| `version_info.txt` | Windows EXE product/file metadata (1.2.0.0) |
+| `version_info.txt` | Windows EXE product/file metadata (1.3.0.0) |
 | `app_icon.ico` | Windows executable and title-bar icon |
 | `app_icon.png` | Wider keyboard crop used by the application window icon |
 | `AKR.png` | Full-size approved keyboard artwork for the GitHub README and project |

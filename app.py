@@ -16,6 +16,7 @@ from datetime import datetime
 from statistics import mean
 from typing_content import SPRINT_WORDS, SENTENCE_SETS, make_sprint_round, calculate_score
 from lesson_content import LESSON_TITLES, LESSONS
+from kids_games import GAME_NAMES, FallingGame, high_scores
 
 APP_FOLDER = 'AlphabeticKeyboardingRevived'
 
@@ -300,7 +301,7 @@ class App:
         self.label(head, stats, 13, justify='left').pack(anchor='w')
         tools = tk.Frame(self.root, bg=COLORS['bg']); tools.pack(fill='x', padx=28, pady=5)
         self.label(tools, 'View:', 12).pack(side='left', padx=(0, 10))
-        options = ['All results', 'Lesson results', 'Sentence tests', 'Keyboard Sprint', 'Other activities'] + [f'Lesson {n}' for n in range(1, 19)]
+        options = ['All results', 'Lesson results', 'Sentence tests', 'Keyboard Sprint', 'Games', 'Other activities'] + [f'Lesson {n}' for n in range(1, 19)]
         self.report_filter = tk.StringVar(value='All results')
         selector = ttk.Combobox(tools, textvariable=self.report_filter, values=options, state='readonly', width=19)
         selector.pack(side='left')
@@ -315,7 +316,7 @@ class App:
         cols = ('date','lesson','section','mode','speed','accuracy','errors','duration')
         table = ttk.Treeview(area, columns=cols, show='headings')
         for col, title, width in [('date','Date / time',145),('lesson','Lesson',125),('section','Exercise',215),
-                                  ('mode','Mode',135),('speed','Speed (WPM)',105),('accuracy','Accuracy %',105),('errors','Errors',75),('duration','Seconds',90)]:
+                                  ('mode','Mode',135),('speed','WPM / Points',105),('accuracy','Accuracy %',105),('errors','Errors',75),('duration','Seconds',90)]:
             table.heading(col, text=title); table.column(col, width=width, anchor='center' if col not in ('date','section') else 'w', stretch=True)
         scrollbar = ttk.Scrollbar(area, orient='vertical', command=table.yview)
         table.configure(yscrollcommand=scrollbar.set)
@@ -326,9 +327,9 @@ class App:
             for r in reversed(records):
                 if not self.report_matches(r, self.report_filter.get()): continue
                 table.insert('', 'end', values=(r.get('timestamp',''),
-                    f'Lesson {r["lesson"]}' if r.get('lesson') else ('Sentence test' if r.get('mode')=='Sentence Speed Test' else 'Sprint'),
+                    f'Lesson {r["lesson"]}' if r.get('lesson') else ('Sentence test' if r.get('mode')=='Sentence Speed Test' else (r.get('game', 'Game') if r.get('mode') == 'Kids Game' else 'Sprint')), 
                     (f'{r.get("section")} — {r.get("title", "")}' if r.get("section") is not None else r.get("title", ""))[:65],
-                    r.get('mode','Practice'), r.get('estimated_wpm','—'), r.get('accuracy_pct','—'),
+                    r.get('mode','Practice'), (f"{r['score']} pts" if r.get('mode') == 'Kids Game' else r.get('estimated_wpm','—')), r.get('accuracy_pct','—'),
                     r.get('errors','—'), r.get('seconds','—')))
         selector.bind('<<ComboboxSelected>>', refresh)
         refresh()
@@ -533,6 +534,7 @@ class App:
         if choice == 'Other activities': return lesson is None
         if choice == 'Sentence tests': return record.get('mode') == 'Sentence Speed Test'
         if choice == 'Keyboard Sprint': return record.get('mode') == 'Keyboard Sprint'
+        if choice == 'Games': return record.get('mode') == 'Kids Game'
         return str(lesson) == choice.removeprefix('Lesson ')
 
     def export_report(self):
@@ -827,7 +829,7 @@ class App:
         # Two compact tool rows prevent labels from clipping on normal laptop displays.
         tool_rows = [
             [('Student: '+self.profile+'  ✎', self.change_profile),
-             ('Progress and Settings', self.show_reports), ('Keyboard Sprint', self.show_game)],
+             ('Progress and Settings', self.show_reports), ('Keyboard Sprint', self.show_game), ('Games', self.show_games)],
             [('Sentence Speed Test', self.show_sentence_test), ('Technique tips', self.show_technique), ('Speed builder', self.show_speed_builder), ('Help & About', self.show_help)],
         ]
         for row in tool_rows:
@@ -871,10 +873,10 @@ class App:
             b.config(width=64, anchor='w', wraplength=650, justify='left')
             b.pack(pady=4)
 
-    def introduce_section(self, section, mode=None):
+    def introduce_section(self, section):
         """Exercise preview and finger placement guide."""
         self.section = section
-        self.mode = mode or 'Practice'
+        self.mode = 'Practice'
         self.clear()
         panel = tk.Frame(self.root, bg=COLORS['bg'])
         panel.pack(fill='both', expand=True, padx=35, pady=20)
@@ -892,9 +894,75 @@ class App:
         guide.pack(fill='x', padx=10)
         guide.set_next(sample[0] if sample else '')
         controls = tk.Frame(panel, bg=COLORS['bg']); controls.pack(pady=(14,8))
-        self.button(controls, 'Start Practice', lambda: self.start_section(section,self.mode)).pack(side='left',padx=8)
-        self.button(controls, 'Start Timed Test', lambda: self.start_section(section,'Timed Test')).pack(side='left',padx=8)
+        self.button(controls, 'Start Practice', lambda: self.start_section(section)).pack(side='left',padx=8)
         self.button(controls, 'Back to exercises', lambda: self.open_lesson(self.lesson_number)).pack(side='left',padx=8)
+
+    def show_games(self):
+        """Separate game launcher; game play takes place in its own window."""
+        self.clear()
+        self.label(self.root, 'GAMES', 27, COLORS['accent'], True).pack(pady=(35, 12))
+        self.label(self.root, f'Playing as {self.profile}  •  Choose a game.', 14).pack(pady=7)
+        self.label(self.root, 'Set your speed in the game window, then click Start Game.', 12).pack(pady=7)
+        descriptions = [
+            ('Falling Letters', '20 single letters. Up to five letters repeat.'),
+            ('Four-Letter Challenge', 'Type each 4-letter sequence. One wrong key restarts it.'),
+            ('Falling Words', 'Type a complete word. One wrong key restarts the word.'),
+        ]
+        for name, detail in descriptions:
+            frame = tk.Frame(self.root, bg=COLORS['panel'], padx=18, pady=10)
+            frame.pack(fill='x', padx=80, pady=7)
+            self.button(frame, name, lambda n=name: self.open_kids_game(n)).pack(side='left')
+            tk.Label(frame, text=detail, bg=COLORS['panel'], fg=COLORS['ink'],
+                     font=('Segoe UI', 11), wraplength=570).pack(side='left', padx=18)
+        nav = tk.Frame(self.root, bg=COLORS['bg']); nav.pack(pady=22)
+        self.button(nav, 'High Scores', self.show_game_high_scores).pack(side='left', padx=10)
+        self.button(nav, 'Main Menu', self.display_home).pack(side='left', padx=10)
+
+    def open_kids_game(self, name):
+        if getattr(self, '_kids_game_window', None) is not None:
+            try:
+                if self._kids_game_window.winfo_exists():
+                    self._kids_game_window.lift()
+                    self._kids_game_window.focus_force()
+                    return
+            except tk.TclError:
+                pass
+        def completed(record):
+            self.save_result(record)
+        def closed():
+            self._kids_game_window = None
+        self._kids_game_window = FallingGame(self.root, game=name, speed=1,
+                                              student=self.profile, on_finish=completed, on_close=closed)
+
+    def show_game_high_scores(self):
+        self.clear()
+        self.label(self.root, 'GAME HIGH SCORES', 25, COLORS['accent'], True).pack(pady=(26, 10))
+        self.label(self.root, 'Best completed round for each student, in each game.', 12).pack(pady=(0, 12))
+        frame = tk.Frame(self.root, bg=COLORS['bg']); frame.pack(fill='both', expand=True, padx=35)
+        columns = ('game', 'student', 'score', 'speed', 'hits', 'accuracy', 'date')
+        table = ttk.Treeview(frame, columns=columns, show='headings')
+        for col, caption, width in [('game', 'Game', 210), ('student', 'Student', 160),
+                                    ('score', 'Points', 90), ('speed', 'Speed', 75),
+                                    ('hits', 'Hits', 70), ('accuracy', 'Accuracy', 95),
+                                    ('date', 'Date', 160)]:
+            table.heading(col, text=caption)
+            table.column(col, width=width, anchor='w' if col in ('game', 'student') else 'center')
+        best = {}
+        for r in high_scores(self.progress):
+            key = (r.get('student', 'Student'), r.get('game'))
+            if key not in best:
+                best[key] = r
+        for game in GAME_NAMES:
+            for (student, row_game), r in sorted(best.items(), key=lambda kv: -int(kv[1].get('score', 0))):
+                if row_game != game:
+                    continue
+                table.insert('', 'end', values=(game, student, r.get('score', 0),
+                    r.get('speed_level', 1), f"{r.get('hits', 0)}/20",
+                    f"{r.get('accuracy_pct', 0)}%", r.get('timestamp', '')[:16]))
+        table.pack(side='left', fill='both', expand=True)
+        sc = ttk.Scrollbar(frame, orient='vertical', command=table.yview)
+        sc.pack(side='right', fill='y'); table.configure(yscrollcommand=sc.set)
+        self.button(self.root, 'Back to Games', self.show_games).pack(pady=15)
 
     def show_help(self):
         """Browse student help by topic; no development/change log language."""
@@ -912,13 +980,14 @@ class App:
                 ('Choose a Lesson', 'Select one of the 18 lessons, then choose an exercise. Read the preview and begin when you are ready.'),
                 ('Progress and Settings', 'View lesson history, typing speed, accuracy, and errors. Save or export reports, back up and restore records, clear selected student results, or reset the program to its starting settings.'),
                 ('Keyboard Sprint', 'Type each word and press Enter. A round contains 12 words, followed by your speed and accuracy results.'),
+                ('Games', 'Open Games and choose Falling Letters, Four-Letter Challenge, or Falling Words. The game window opens maximized. Select Speed 1, 2, 3, or 4 (Ludicrous Speed) and click Start Game. The game counts down 3, 2, 1 before the first target moves. Click Stop Game at any time during the countdown or round to discard that round and choose a new speed before restarting. Type each target before it crosses the finish line. Every round has 20 targets. Correct targets pause for half a second before the next appears. A wrong character in a sequence or word starts that target over. Completed rounds save points and accuracy to your student profile. After a round, choose a new speed and click Start Game to play again without closing the window.'),
+                ('Game High Scores', 'Open Games, then choose High Scores to see each student’s best scores for each game. Higher speed settings earn more points. Records can also be viewed under Progress and Settings → Games.'),
                 ('Sentence Speed Test', 'Choose a set of sentences. Type each one, press Enter, and review your speed and accuracy at the end.'),
                 ('Technique Tips', 'Read advice about posture, hand position, and comfortable typing habits.'),
                 ('Speed Builder', 'Choose a words-per-minute target and practice an exercise to see whether you reach it.'),
             ]),
             ('TYPING LESSONS', [
                 ('Practice', 'Learn with the highlighted keyboard and finger guide. Use Backspace when you want to correct what you typed.'),
-                ('Timed Test', 'Type the exercise to measure speed and accuracy. Incorrect keys can still count as errors even after you correct them.'),
                 ('Lesson Timer', 'The timer begins when you type the first character of a line. Press Enter to finish the line and stop the timer. It remains paused until you start typing the next line.'),
                 ('After an Exercise', 'Choose Next Exercise / Lesson to continue, Repeat Exercise to try again, View Student Report to check your results, or Return to Menu.'),
             ]),
@@ -990,9 +1059,9 @@ class App:
         for child in nav_content.winfo_children():
             child.bind('<MouseWheel>', scroll_topics)
 
-    def start_section(self, section, mode=None):
+    def start_section(self, section):
         self.section = section
-        self.mode = mode or 'Practice'
+        self.mode = 'Practice'
         self.index = 0
         self.line_started = None
         self.elapsed_typing = 0.0
@@ -1018,14 +1087,14 @@ class App:
             self.open_lesson(self.lesson_number)
             return
         if pos + 1 < len(sections):
-            self.introduce_section(sections[pos+1],self.mode)
+            self.introduce_section(sections[pos+1])
         elif self.lesson_number < 18:
             # Next means actually advance to the next available exercise, not
             # show another chooser and leave the student wondering if it advanced.
             for next_lesson in range(self.lesson_number+1,19):
                 if self.lessons.get(next_lesson):
                     self.lesson_number = next_lesson
-                    self.introduce_section(self.lessons[next_lesson][0], self.mode)
+                    self.introduce_section(self.lessons[next_lesson][0])
                     return
             self.display_home()
         else:
@@ -1037,12 +1106,9 @@ class App:
                    19, COLORS['accent'], True).pack(pady=(15, 7))
         nav = tk.Frame(self.root, bg=COLORS['bg']); nav.pack(fill='x', padx=24, pady=4)
         self.button(nav, '← Exercises', lambda: self.open_lesson(self.lesson_number)).pack(side='left')
-        self.button(nav, 'Restart exercise', lambda: self.start_section(self.section,self.mode)).pack(side='right')
-        self.button(nav, 'Switch to ' + ('Timed Test' if self.mode=='Practice' else 'Practice'),
-                    lambda: self.start_section(self.section,'Timed Test' if self.mode=='Practice' else 'Practice')).pack(side='right',padx=10)
+        self.button(nav, 'Restart exercise', lambda: self.start_section(self.section)).pack(side='right')
         self.status = self.label(self.root, '', 11); self.status.pack(pady=(7,4))
-        help_text = ('Practice: follow the keyboard and correct mistakes with Backspace.' if self.mode=='Practice' else
-                     'Timed Test: correct your typing if needed; mistakes still count.')
+        help_text = 'Follow the highlighted keyboard and correct mistakes with Backspace.'
         self.label(self.root, help_text, 11, COLORS['accent']).pack(pady=(0,3))
         self.label(self.root, 'COPY THIS LINE', 11, COLORS['accent'],True).pack()
         self.target = self.label(self.root, '', 19, bold=True, wraplength=980, justify='left')
@@ -1158,7 +1224,7 @@ class App:
         buttons = tk.Frame(box,bg=COLORS['bg']); buttons.pack(pady=15)
         self.button(buttons,'Next Activity →',self.next_section).pack(side='left',padx=7)
         self.button(buttons,'Main Menu',self.display_home).pack(side='left',padx=7)
-        self.button(buttons,'Try Again',lambda:self.start_section(self.section,self.mode)).pack(side='left',padx=7)
+        self.button(buttons,'Try Again',lambda:self.start_section(self.section)).pack(side='left',padx=7)
         self.button(box,'Progress and Settings',self.show_reports).pack(pady=9)
 
 

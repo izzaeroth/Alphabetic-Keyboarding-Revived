@@ -1,0 +1,2 @@
+# Runtime uses Python standard library only.
+# Windows EXE build requires PyInstaller (installed by BUILD_WINDOWS_EXE.bat).

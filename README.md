@@ -59,12 +59,14 @@ Open PowerShell in the project folder and run:
 ```powershell
 py -3 -m unittest discover -p "test_*.py" -v
 py -3 -m pip install pyinstaller
-py -3 -m PyInstaller --noconfirm --clean --onefile --windowed --name AlphabeticKeyboardingRevived --version-file version_info.txt app.py
+py -3 -m PyInstaller --noconfirm --clean --onefile --windowed --name AlphabeticKeyboardingRevived --version-file version_info.txt --icon app_icon.ico --add-data "app_icon.ico;." --add-data "app_icon.png;." --add-data "splash.png;." app.py
 ```
 
 If `py` isn't available, substitute `python` if it points to a compatible Python installation. PyInstaller must be run **on Windows** to produce the Windows EXE; it does not cross-compile Windows executables from macOS or Linux.
 
-The executable's **Product version** and **File version** are set to **1.0.0.0** in `version_info.txt` (visible in Windows File Properties after building).
+The build embeds `app_icon.ico` (a home-row close-up from `AKR.png`) as the EXE icon and includes the same icon for the application window. The EXE is self-contained; no separate icon or splash file is needed alongside it. On startup the application shows `AKR.png` artwork as a 2.5-second splash screen (using a bundled, display-sized `splash.png`).
+
+The executable's **Product version** and **File version** are set to **1.1.0.0** in `version_info.txt` (visible in Windows File Properties after building).
 
 ## For developers: run the source without building
 
@@ -84,7 +86,11 @@ If you want to test or modify the Python code, install Python 3.10+ with Tkinter
 | `typing_content.py` | Keyboard Sprint content, sentence tests, and scoring helpers |
 | `START_WINDOWS.bat` | Runs the Python source; **requires Python** |
 | `BUILD_WINDOWS_EXE.bat` | Tests and builds the standalone Windows EXE; **requires Python** |
-| `version_info.txt` | Windows EXE product/file metadata (1.0.0.0) |
+| `version_info.txt` | Windows EXE product/file metadata (1.1.0.0) |
+| `app_icon.ico` | Windows executable and title-bar icon |
+| `app_icon.png` | Wider keyboard crop used by the application window icon |
+| `AKR.png` | Full-size approved keyboard artwork for the GitHub README and project |
+| `splash.png` | Display-sized copy of `AKR.png` shown for 2.5 seconds at startup |
 | `test_*.py` | Automated tests |
 | `.gitignore` | Excludes generated build files and local data from Git |
 

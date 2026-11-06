@@ -14,7 +14,7 @@ if errorlevel 1 (
 if errorlevel 1 goto failed
 %PY% -m pip install pyinstaller
 if errorlevel 1 goto failed
-%PY% -m PyInstaller --noconfirm --clean --onefile --windowed --name AlphabeticKeyboardingRevived --version-file version_info.txt app.py
+%PY% -m PyInstaller --noconfirm --clean --onefile --windowed --name AlphabeticKeyboardingRevived --version-file version_info.txt --icon app_icon.ico --add-data "app_icon.ico;." --add-data "app_icon.png;." --add-data "splash.png;." app.py
 if errorlevel 1 goto failed
 echo.
 echo Build created: dist\AlphabeticKeyboardingRevived.exe

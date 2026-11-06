@@ -1169,9 +1169,54 @@ if __name__ == '__main__':
         # A failed migration must not silently discard data from an old install.
         print(f'Could not copy previous student records: {exc}', file=sys.stderr)
     root = tk.Tk()
+    # Resolve packaged resources from PyInstaller's extraction directory, or
+    # from this source directory when launched directly with Python.
+    resource_dir = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
     try:
-        App(root)
-    except Exception as exc:
-        messagebox.showerror('Unable to open Alphabetic Keyboarding', str(exc))
-        raise
+        if sys.platform == 'win32':
+            root.iconbitmap(str(resource_dir / 'app_icon.ico'))
+        else:
+            root._app_icon = tk.PhotoImage(file=str(resource_dir / 'app_icon.png'))
+            root.iconphoto(True, root._app_icon)
+    except (tk.TclError, OSError):
+        pass  # Lack of icon support should never prevent the app from launching.
+    def launch_application():
+        """Open the main window after the welcome artwork closes."""
+        root.deiconify()
+        try:
+            App(root)
+        except Exception as exc:
+            messagebox.showerror('Unable to open Alphabetic Keyboarding', str(exc))
+            raise
+
+    # Display the full approved artwork for 2.5 seconds on startup.
+    # The bundled PNG works both from Python source and inside PyInstaller's EXE.
+    root.withdraw()
+    splash = None
+    try:
+        splash_image = tk.PhotoImage(file=str(resource_dir / 'splash.png'))
+        splash = tk.Toplevel(root)
+        splash.overrideredirect(True)
+        splash.configure(bg='#0b2034')
+        splash._image_ref = splash_image
+        tk.Label(splash, image=splash_image, bd=0, highlightthickness=0).pack()
+        width, height = splash_image.width(), splash_image.height()
+        x = max(0, (splash.winfo_screenwidth() - width) // 2)
+        y = max(0, (splash.winfo_screenheight() - height) // 2)
+        splash.geometry(f'{width}x{height}+{x}+{y}')
+        splash.lift()
+    except (tk.TclError, OSError):
+        if splash is not None:
+            splash.destroy()
+        splash = None
+
+    def finish_splash():
+        if splash is not None and splash.winfo_exists():
+            splash.destroy()
+        launch_application()
+
+    if splash is None:
+        finish_splash()
+    else:
+        root.after(2500, finish_splash)
     root.mainloop()

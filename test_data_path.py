@@ -8,9 +8,13 @@ import app
 
 
 class DataPathTests(unittest.TestCase):
-    def test_data_directory_override_on_non_windows(self):
+    def test_data_directory_uses_platform_appropriate_location(self):
+        # Windows uses LOCALAPPDATA; Unix-like systems use XDG_DATA_HOME.
+        # Always patch the variable for the actual host OS, so this test
+        # works when the Windows build script runs the suite before packing.
         with tempfile.TemporaryDirectory() as temp:
-            with patch.dict(app.os.environ, {'XDG_DATA_HOME': temp}):
+            variable = 'LOCALAPPDATA' if app.os.name == 'nt' else 'XDG_DATA_HOME'
+            with patch.dict(app.os.environ, {variable: temp}):
                 self.assertEqual(app.get_data_directory(), Path(temp) / 'AlphabeticKeyboardingRevived')
 
     def test_migration_copies_both_files_without_removing_original(self):

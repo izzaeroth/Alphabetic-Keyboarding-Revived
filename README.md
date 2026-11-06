@@ -7,10 +7,46 @@ A Windows 11 typing tutor with a retro-inspired interface and **independently wr
 - 18 lessons with 90 exercises covering home-row typing, additional keys, numbers, punctuation, and fluency.
 - On-screen keyboard with next-key highlighting and finger guides.
 - Practice and Timed Test modes. For lesson lines, timing begins with the first typed character and stops when you press **Enter**; it stays paused between lines.
-- Keyboard Sprint, sentence-based speed tests, and speed goals.
+- Keyboard Sprint, sentence-based speed tests, speed goals, and **Games** (Falling Letters, Four-Letter Challenge, Falling Words).
 - Student profiles, WPM and accuracy reports, CSV export, and record backup/restore.
+- 20-target game rounds with four speed levels, points, per-student high scores, and game results in Progress and Settings.
 - **Progress and Settings** for viewing results, clearing selected students' reports or all reports, and resetting the application.
 - Clickable **Help & About** topics.
+
+## Games
+
+Choose **Games** from the main menu to play one of three typing games. Each game opens in a maximized window and contains **20 falling targets** per round.
+
+| Game | How to play |
+|---|---|
+| **Falling Letters** | Type the displayed letter before it reaches the bottom line. Each round contains five repeated letters; no letter repeats more than twice. |
+| **Four-Letter Challenge** | Type each four-letter sequence in order. A wrong key restarts the current sequence. |
+| **Falling Words** | Type each complete word before it reaches the line. A wrong key restarts the current word. |
+
+### Start, stop, and replay
+
+1. Open a game and choose a speed. The targets do **not** move until you start.
+2. Click **Start Game** and watch the **3–2–1** countdown; the game begins after it finishes.
+3. Type the targets before they reach the bottom line. A correct target is followed by a **0.5-second pause** before the next one.
+4. During the countdown or the round, **Stop Game** cancels the round **without saving a score**. You can change speed and start again.
+5. When all 20 targets have been handled, the score stays on screen. Choose a new speed and click **Start Game** to play another round in the same window.
+
+### Speed settings
+
+| Setting | Movement per update | Difficulty |
+|---|---:|---|
+| Speed 1 | 1.0 pixels | Easy |
+| Speed 2 | 2.5 pixels | Medium |
+| Speed 3 | 4.0 pixels | Fast |
+| Speed 4 | 5.5 pixels | Ludicrous Speed |
+
+Movement updates approximately every **30 milliseconds**. Speeds affect how quickly targets fall and the points earned for successful targets.
+
+### Scoring and high scores
+
+Correct targets earn points. Faster speed settings award more points, while mistakes and missed targets reduce your score. At the end of a completed round, the game saves its score, accuracy, hits, misses, and chosen speed to the current student profile.
+
+Open **Games → High Scores** to see the best completed score for each game and student. Visit **Progress and Settings → Games** to review saved rounds. Backups include these records; clearing reports or using Factory Reset clears the corresponding game results as well.
 
 ## For users: run the finished Windows app (no Python needed)
 
@@ -66,7 +102,7 @@ If `py` isn't available, substitute `python` if it points to a compatible Python
 
 The build embeds `app_icon.ico` (a home-row close-up from `AKR.png`) as the EXE icon and includes the same icon for the application window. The EXE is self-contained; no separate icon or splash file is needed alongside it. On startup the application shows `AKR.png` artwork as a 2.5-second splash screen (using a bundled, display-sized `splash.png`).
 
-The executable's **Product version** and **File version** are set to **1.1.0.0** in `version_info.txt` (visible in Windows File Properties after building).
+The executable's **Product version** and **File version** are set to **1.2.0.0** in `version_info.txt` (visible in Windows File Properties after building).
 
 ## For developers: run the source without building
 
@@ -84,14 +120,15 @@ If you want to test or modify the Python code, install Python 3.10+ with Tkinter
 | `app.py` | Application screens, navigation, student reports, and settings |
 | `lesson_content.py` | Independently written lessons and exercises |
 | `typing_content.py` | Keyboard Sprint content, sentence tests, and scoring helpers |
+| `kids_games.py` | Games window, falling targets, scoring, and high-score helpers |
 | `START_WINDOWS.bat` | Runs the Python source; **requires Python** |
 | `BUILD_WINDOWS_EXE.bat` | Tests and builds the standalone Windows EXE; **requires Python** |
-| `version_info.txt` | Windows EXE product/file metadata (1.1.0.0) |
+| `version_info.txt` | Windows EXE product/file metadata (1.2.0.0) |
 | `app_icon.ico` | Windows executable and title-bar icon |
 | `app_icon.png` | Wider keyboard crop used by the application window icon |
 | `AKR.png` | Full-size approved keyboard artwork for the GitHub README and project |
 | `splash.png` | Display-sized copy of `AKR.png` shown for 2.5 seconds at startup |
-| `test_*.py` | Automated tests |
+| `test_*.py` | Automated tests, including game rules and interface checks |
 | `.gitignore` | Excludes generated build files and local data from Git |
 
 ## Historical inspiration

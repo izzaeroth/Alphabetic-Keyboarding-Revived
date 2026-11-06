@@ -1,6 +1,7 @@
 """Alphabetic Keyboarding Revived: independently authored typing lessons and Windows interface."""
 from __future__ import annotations
 import json
+import os
 import csv
 import random
 import zipfile
@@ -16,8 +17,43 @@ from statistics import mean
 from typing_content import SPRINT_WORDS, SENTENCE_SETS, make_sprint_round, calculate_score
 from lesson_content import LESSON_TITLES, LESSONS
 
-SAVE = Path.home() / 'AlphabeticKeyboardingRevived' / 'progress.json'
+APP_FOLDER = 'AlphabeticKeyboardingRevived'
+
+
+def get_data_directory():
+    """Use the current Windows user's Local AppData for writable files."""
+    if os.name == 'nt':
+        base = Path(os.environ.get('LOCALAPPDATA') or (Path.home() / 'AppData' / 'Local'))
+    else:
+        # A sensible location for source-code users on other operating systems.
+        base = Path(os.environ.get('XDG_DATA_HOME') or (Path.home() / '.local' / 'share'))
+    return base / APP_FOLDER
+
+
+SAVE = get_data_directory() / 'progress.json'
 SETTINGS = SAVE.parent / 'settings.json'
+
+
+def migrate_existing_data(old_directory=None, new_directory=None):
+    """Copy existing records once, leaving the originals as a safety copy.
+
+    Never overwrite a file already present in the new location; that allows
+    users to keep independently updated data even when the old folder exists.
+    """
+    old_dir = Path(old_directory) if old_directory is not None else Path.home() / APP_FOLDER
+    new_dir = Path(new_directory) if new_directory is not None else SAVE.parent
+    if old_dir == new_dir:
+        return []
+    migrated = []
+    for filename in ('progress.json', 'settings.json'):
+        source, target = old_dir / filename, new_dir / filename
+        if source.is_file() and not target.exists():
+            new_dir.mkdir(parents=True, exist_ok=True)
+            # Exclusive creation prevents accidental replacement of saved data.
+            with source.open('rb') as src, target.open('xb') as dest:
+                shutil.copyfileobj(src, dest)
+            migrated.append(filename)
+    return migrated
 
 COLORS = dict(bg='#061a6b', panel='#112a8b', ink='#f3f4ff', accent='#ffe36d', correct='#94f6b5', wrong='#ff8c9a')
 
@@ -1127,6 +1163,11 @@ class App:
 
 
 if __name__ == '__main__':
+    try:
+        migrate_existing_data()
+    except OSError as exc:
+        # A failed migration must not silently discard data from an old install.
+        print(f'Could not copy previous student records: {exc}', file=sys.stderr)
     root = tk.Tk()
     try:
         App(root)

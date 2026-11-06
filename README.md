@@ -22,6 +22,25 @@ If a Windows executable has been published under the repository's **Releases** p
 
 **You do not need to install Python, run a `.bat` file, or use DOSBox to run the compiled EXE.** The EXE is a standalone build made with PyInstaller. This source repository/ZIP does **not** itself contain a prebuilt EXE; a maintainer must build and upload one to Releases.
 
+## Where student data is saved
+
+On Windows 11, student reports and application settings are stored in the **current Windows user's Local AppData folder**, not beside the EXE or under Program Files:
+
+```text
+%LOCALAPPDATA%\AlphabeticKeyboardingRevived\
+    progress.json
+    settings.json
+```
+
+To open the folder, press **Win + R**, enter `%LOCALAPPDATA%\AlphabeticKeyboardingRevived`, and press **Enter**. The folder appears after the app saves data for the first time.
+
+- `progress.json` stores student lesson results, typing scores, and activity history.
+- `settings.json` stores the selected student and related settings.
+- This folder is **per Windows user**. Different Windows accounts have separate data.
+- Backups can be created and restored using **Progress and Settings** in the app. The **Factory Reset** option clears saved results and resets the selected student.
+
+**Moving from an earlier version:** On first launch, if files exist in the previous `C:\Users\<username>\AlphabeticKeyboardingRevived` folder and the new AppData files do not exist yet, the application copies them to Local AppData. The old files are left untouched. Existing files in Local AppData are never overwritten by this migration.
+
 ## For developers: build the Windows EXE from source
 
 **Requirements on the build computer:** Windows, Python 3.10 or later with `pip` and Tkinter, and an internet connection to install PyInstaller. Python is required **only on the computer building from source**, not on computers running the resulting EXE.
